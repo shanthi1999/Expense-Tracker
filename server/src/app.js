@@ -1,8 +1,10 @@
+import './vendors/mongodb/mongoose.plugins.js';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import connectDB from './vendors/mongodb/mongoose.connect.js';
 import addTransactionId from './middlewares/addTransactionId.js';
+import sanitizeResponse from './middlewares/sanitizeResponse.js';
 import notFound from './middlewares/notFound.js';
 import errorHandler from './middlewares/errorHandler.js';
 import routes from './routes/index.js';
@@ -15,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(addTransactionId);
+app.use(sanitizeResponse);
 
 app.use('/api/v1', routes);
 app.use(notFound);
