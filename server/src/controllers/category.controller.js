@@ -20,7 +20,11 @@ const getCategories = async (req, res, next) => {
     const txId = req.id;
 
     try {
-        const categories = await categoryService.getCategories(req.query, req.user.userId, txId);
+        const categories = await categoryService.getCategories(
+            req.validatedQuery ?? req.query,
+            req.user.userId,
+            txId
+        );
 
         res.status(200).json({
             success: true,

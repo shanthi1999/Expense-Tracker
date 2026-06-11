@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 const stripMongoInternals = (value) => {
     if (value == null || typeof value !== 'object') {
         return value;
@@ -5,6 +7,10 @@ const stripMongoInternals = (value) => {
 
     if (value instanceof Date) {
         return value;
+    }
+
+    if (value instanceof mongoose.Document) {
+        return stripMongoInternals(value.toObject());
     }
 
     if (Array.isArray(value)) {

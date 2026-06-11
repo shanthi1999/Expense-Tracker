@@ -1,5 +1,20 @@
 import logger from '../vendors/logger/logger.js';
 
+/** Express 5 exposes req.query as read-only — store validated query on req.validatedQuery. */
+const applyValidated = (req, source, value) => {
+    if (source === 'query') {
+        req.validatedQuery = value;
+        return;
+    }
+
+    if (source === 'params') {
+        Object.assign(req.params, value);
+        return;
+    }
+
+    req[source] = value;
+};
+
 const validate =
     (schema, source = 'body') =>
     (req, res, next) => {
@@ -20,7 +35,7 @@ const validate =
             });
         }
 
-        req[source] = value;
+        applyValidated(req, source, value);
         next();
     };
 

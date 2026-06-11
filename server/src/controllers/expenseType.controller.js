@@ -25,7 +25,7 @@ const getExpenseTypes = async (req, res, next) => {
 
     try {
         const expenseTypes = await expenseTypeService.getExpenseTypes(
-            req.query,
+            req.validatedQuery ?? req.query,
             req.user.userId,
             txId
         );

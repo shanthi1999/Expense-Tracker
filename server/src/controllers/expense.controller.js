@@ -25,7 +25,11 @@ const getExpense = async (req, res, next) => {
         query: req.query,
     });
     try {
-        const expenses = await expenseService.getExpenses(req.query, req.user.userId, txId);
+        const expenses = await expenseService.getExpenses(
+            req.validatedQuery ?? req.query,
+            req.user.userId,
+            txId
+        );
         logger.info(`[${txId}] [ExpenseController] [getExpense] Expenses fetched successfully`, {
             total: expenses.total,
         });
