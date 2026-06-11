@@ -1,0 +1,36 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "description": "Tracker expensive service",
+    "keywords": [
+        "node",
+        "express",
+        "mongodb"
+    ],
+    "license": "ISC",
+    "author": "shanthi",
+    "type": "module",
+    "main": "src/index.js",
+    "scripts": {
+        "dev": "nodemon",
+        "test": "echo \"Error: no test specified\" \u0026\u0026 exit 1",
+        "lint": "prettier --write \"src/**/*.js\"",
+        "format:check": "prettier --check \"src/**/*.js\""
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "express-request-id": "^3.0.0",
+        "joi": "^18.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^8.16.1",
+        "uuid": "^14.0.0",
+        "winston": "^3.19.0"
+    },
+    "devDependencies": {
+        "prettier": "^3.8.4"
+    }
+}
