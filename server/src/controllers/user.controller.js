@@ -2,7 +2,8 @@ import userService from '../service/user/user.service.js';
 import logger from '../vendors/logger/logger.js';
 import authUtils from '../vendors/jwt/auth.js';
 import AppError from '../utils/AppError.js';
-import uploadBufferToCloudinary, { isCloudinaryConfigured } from '../utils/cloudinaryUpload.js';
+import uploadBufferToCloudinary from '../clients/cloudinary/cloudinary.client.js';
+import { isCloudinaryConfigured } from '../vendors/cloudinary/cloudinary.js';
 
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
 

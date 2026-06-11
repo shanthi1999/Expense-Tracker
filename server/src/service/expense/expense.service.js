@@ -5,6 +5,7 @@ import categoryService from './category.service.js';
 import expenseTypeService from './expenseType.service.js';
 import aiService from '../../services/ai.service.js';
 import userService from '../user/user.service.js';
+import expenseReportExport from '../../utils/expenseReportExport.js';
 import logger from '../../vendors/logger/logger.js';
 import commonEnums from '../../enums/common.enums.js';
 import AppError from '../../utils/AppError.js';
@@ -202,6 +203,55 @@ const getExpense = async (expenseId, userId, txId) => {
     }
 };
 
+const getEnrichedExpenseRows = async (expenseQuery, userId, txId) => {
+    const user = await userService.getUser(userId, txId);
+    const currency = user?.currency || 'USD';
+
+    const expenseList = await getExpenses(
+        {
+            ...expenseQuery,
+            page: 1,
+            limit: 5000,
+            sortBy: expenseQuery.sortBy || 'date',
+            order: expenseQuery.order || 'DESC',
+        },
+        userId,
+        txId
+    );
+
+    const categoryDBModelApi = new categoryDbModelApi();
+    const expenseTypeDBModelApi = new expenseTypeDbModelApi();
+
+    const [categoriesResult, expenseTypesResult] = await Promise.all([
+        categoryDBModelApi.getCategories({ userId }, 500, 0, {}, txId),
+        expenseTypeDBModelApi.getExpenseTypes({ userId }, 500, 0, {}, txId),
+    ]);
+
+    const categoryMap = Object.fromEntries(
+        (categoriesResult.data || []).map((c) => [c.categoryId, c.title])
+    );
+    const typeMap = Object.fromEntries(
+        (expenseTypesResult.data || []).map((t) => [t.expenseTypeId, t.title])
+    );
+
+    const rows = (expenseList.data || []).map((expense) => ({
+        title: expense.title,
+        amount: expense.amount,
+        category: categoryMap[expense.categoryId] || 'Unknown',
+        type: typeMap[expense.expenseTypeId] || 'Unknown',
+        date: expense.date ? new Date(expense.date).toISOString().slice(0, 10) : '',
+        paymentMethod: expense.paymentMethod || '',
+        description: expense.description || '',
+    }));
+
+    return {
+        rows,
+        total: expenseList.total,
+        currency,
+        generatedFor: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email,
+    };
+};
+
 const getAiSummary = async (expenseQuery, userId, txId) => {
     logger.info(`[${txId}] [ExpenseService] [getAiSummary] Generating AI summary`, {
         query: expenseQuery,
@@ -209,38 +259,11 @@ const getAiSummary = async (expenseQuery, userId, txId) => {
     });
 
     try {
-        const user = await userService.getUser(userId, txId);
-        const currency = user?.currency || 'USD';
-
-        const expenseList = await getExpenses(
-            { ...expenseQuery, page: 1, limit: 500, sortBy: 'date', order: 'DESC' },
+        const { rows: enrichedExpenses, currency } = await getEnrichedExpenseRows(
+            expenseQuery,
             userId,
             txId
         );
-
-        const categoryDBModelApi = new categoryDbModelApi();
-        const expenseTypeDBModelApi = new expenseTypeDbModelApi();
-
-        const [categoriesResult, expenseTypesResult] = await Promise.all([
-            categoryDBModelApi.getCategories({ userId }, 500, 0, {}, txId),
-            expenseTypeDBModelApi.getExpenseTypes({ userId }, 500, 0, {}, txId),
-        ]);
-
-        const categoryMap = Object.fromEntries(
-            (categoriesResult.data || []).map((c) => [c.categoryId, c.title])
-        );
-        const typeMap = Object.fromEntries(
-            (expenseTypesResult.data || []).map((t) => [t.expenseTypeId, t.title])
-        );
-
-        const enrichedExpenses = (expenseList.data || []).map((expense) => ({
-            title: expense.title,
-            amount: expense.amount,
-            category: categoryMap[expense.categoryId] || 'Unknown',
-            type: typeMap[expense.expenseTypeId] || 'Unknown',
-            date: expense.date ? new Date(expense.date).toISOString().slice(0, 10) : null,
-            paymentMethod: expense.paymentMethod || undefined,
-        }));
 
         const summary = await aiService.summarizeExpenses(enrichedExpenses, currency);
 
@@ -258,6 +281,40 @@ const getAiSummary = async (expenseQuery, userId, txId) => {
     }
 };
 
+const exportExpenses = async (expenseQuery, userId, txId) => {
+    logger.info(`[${txId}] [ExpenseService] [exportExpenses] Exporting expenses`, {
+        query: expenseQuery,
+        userId,
+    });
+
+    try {
+        const { format, ...filters } = expenseQuery;
+        const { rows, currency, generatedFor } = await getEnrichedExpenseRows(filters, userId, txId);
+
+        if (!rows.length) {
+            throw new AppError('No expenses found matching the selected filters.', 404);
+        }
+
+        const file = await expenseReportExport.generateExpenseReport(format, rows, {
+            currency,
+            generatedFor,
+        });
+
+        logger.info(`[${txId}] [ExpenseService] [exportExpenses] Export generated`, {
+            format,
+            count: rows.length,
+        });
+
+        return file;
+    } catch (error) {
+        logger.error(`[${txId}] [ExpenseService] [exportExpenses] Failed`, {
+            error: error.message,
+        });
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Failed to export expenses: ${error.message}`, 500);
+    }
+};
+
 export default {
     getExpenses,
     getExpense,
@@ -265,4 +322,5 @@ export default {
     updateExpense,
     deleteExpense,
     getAiSummary,
+    exportExpenses,
 };

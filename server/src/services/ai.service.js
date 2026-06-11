@@ -1,42 +1,14 @@
-import Groq from 'groq-sdk';
 import envConfig from '../config/env_config.js';
 import AppError from '../utils/AppError.js';
-
-const FALLBACK_MODELS = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile'];
-
-const MAX_RETRIES = 3;
-const RETRY_DELAYS_MS = [1000, 2000, 4000];
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import groqClient from '../clients/groq/groq.client.js';
+import { GROQ_FALLBACK_MODELS } from '../vendors/groq/groq.js';
 
 const getModelsToTry = () => {
     const preferred = envConfig.groq?.model || 'llama-3.1-8b-instant';
-    return [...new Set([preferred, ...FALLBACK_MODELS])];
-};
-
-const getClient = () => {
-    const apiKey = envConfig.groq?.apiKey;
-    if (!apiKey) {
-        throw new AppError('AI summary is not configured. Missing GROQ_API_KEY.', 503);
-    }
-    return new Groq({ apiKey });
+    return [...new Set([preferred, ...GROQ_FALLBACK_MODELS])];
 };
 
 const getErrorMessage = (error) => error?.message || '';
-
-const isTransientError = (error) => {
-    const message = getErrorMessage(error);
-    const status = error?.status || error?.statusCode;
-    return (
-        status === 429 ||
-        status === 503 ||
-        message.includes('429') ||
-        message.includes('503') ||
-        message.includes('rate limit') ||
-        message.includes('Rate limit') ||
-        message.includes('overloaded')
-    );
-};
 
 const isModelUnavailableError = (error) => {
     const message = getErrorMessage(error);
@@ -50,7 +22,7 @@ const toAppError = (error) => {
     const message = getErrorMessage(error);
     const status = error?.status || error?.statusCode;
 
-    if (isTransientError(error)) {
+    if (groqClient.isTransientError(error)) {
         return new AppError(
             'AI service is temporarily busy. Wait a few seconds and click Try again.',
             503
@@ -70,6 +42,9 @@ const toAppError = (error) => {
 
     return new AppError('Failed to generate AI summary. Please try again later.', 502);
 };
+
+const SYSTEM_PROMPT =
+    'You are a personal finance assistant for an expense tracker app. Respond with valid JSON only.';
 
 const buildPrompt = (expenses, currency = 'USD') => {
     const expenseJson = JSON.stringify(expenses, null, 2);
@@ -125,49 +100,14 @@ const parseAiResponse = (text) => {
     }
 };
 
-const generateWithModel = async (client, modelName, prompt) => {
-    let lastError = null;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        try {
-            const completion = await client.chat.completions.create({
-                model: modelName,
-                messages: [
-                    {
-                        role: 'system',
-                        content:
-                            'You are a personal finance assistant for an expense tracker app. Respond with valid JSON only.',
-                    },
-                    { role: 'user', content: prompt },
-                ],
-                temperature: 0.4,
-                max_tokens: 1024,
-            });
-
-            return completion.choices[0]?.message?.content || '';
-        } catch (error) {
-            lastError = error;
-            const canRetry = isTransientError(error) && attempt < MAX_RETRIES - 1;
-            if (canRetry) {
-                await sleep(RETRY_DELAYS_MS[attempt] ?? 4000);
-                continue;
-            }
-            throw error;
-        }
-    }
-
-    throw lastError;
-};
-
 const summarizeExpenses = async (expenses, currency = 'USD') => {
-    const client = getClient();
     const prompt = buildPrompt(expenses, currency);
     const modelsToTry = getModelsToTry();
     let lastError = null;
 
     for (const modelName of modelsToTry) {
         try {
-            const text = await generateWithModel(client, modelName, prompt);
+            const text = await groqClient.generateChatCompletion(modelName, prompt, SYSTEM_PROMPT);
             const parsed = parseAiResponse(text);
 
             return {
@@ -184,7 +124,7 @@ const summarizeExpenses = async (expenses, currency = 'USD') => {
             };
         } catch (error) {
             lastError = error;
-            if (isTransientError(error) || isModelUnavailableError(error)) {
+            if (groqClient.isTransientError(error) || isModelUnavailableError(error)) {
                 continue;
             }
             throw toAppError(error);

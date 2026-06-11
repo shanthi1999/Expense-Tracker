@@ -109,10 +109,33 @@ const getAiSummary = async (req, res, next) => {
     }
 };
 
+const exportExpenseReport = async (req, res, next) => {
+    const txId = req.id;
+    logger.info(`[${txId}] [ExpenseController] [exportExpenseReport] Request received`, {
+        query: req.query,
+    });
+    try {
+        const file = await expenseService.exportExpenses(
+            req.validatedQuery ?? req.query,
+            req.user.userId,
+            txId
+        );
+        logger.info(`[${txId}] [ExpenseController] [exportExpenseReport] Export generated`, {
+            filename: file.filename,
+        });
+        res.setHeader('Content-Type', file.contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+        return res.status(200).send(file.buffer);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     addExpense,
     getExpense,
     updateExpense,
     deleteExpense,
     getAiSummary,
+    exportExpenseReport,
 };

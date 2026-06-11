@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import cloudinary, { configureCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
+import cloudinary, { configureCloudinary } from '../../vendors/cloudinary/cloudinary.js';
 
 const uploadBufferToCloudinary = (buffer, userId) => {
     configureCloudinary();
@@ -23,4 +23,3 @@ const uploadBufferToCloudinary = (buffer, userId) => {
 };
 
 export default uploadBufferToCloudinary;
-export { isCloudinaryConfigured };

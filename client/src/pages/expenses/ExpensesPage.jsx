@@ -19,6 +19,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Pagination } from '@/components/common/Pagination';
 import { getTotalPages } from '@/lib/pagination';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ExportReportsMenu } from '@/components/common/ExportReportsMenu';
 import { ColorChip } from '@/components/common/ColorChip';
 import { SortableTableHead } from '@/components/common/SortableTableHead';
 import { Badge } from '@/components/ui/badge';
@@ -218,10 +219,13 @@ export default function ExpensesPage() {
                 title="Expenses"
                 description="Track and manage your spending"
                 action={
-                    <Button onClick={openCreate} disabled={!categories.length || !expenseTypes.length}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Expense
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ExportReportsMenu filters={filters} sort={sort} />
+                        <Button onClick={openCreate} disabled={!categories.length || !expenseTypes.length}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Expense
+                        </Button>
+                    </div>
                 }
             />
 

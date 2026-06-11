@@ -95,4 +95,28 @@ const getAiSummary = Joi.object({
     }),
 });
 
-export default { createExpense, updateExpense, getExpenses, getAiSummary, idParam };
+const exportExpenses = Joi.object({
+    format: Joi.string().valid('csv', 'xlsx', 'excel', 'pdf').required().messages({
+        'any.only': 'format must be one of csv, xlsx, excel, pdf',
+        'any.required': 'format is required',
+    }),
+    categoryId: Joi.string().uuid().optional().messages({
+        'string.guid': 'categoryId must be a valid UUID',
+    }),
+    expenseTypeId: Joi.string().uuid().optional().messages({
+        'string.guid': 'expenseTypeId must be a valid UUID',
+    }),
+    sortBy: Joi.string()
+        .valid(...EXPENSE_SORT_FIELDS)
+        .optional()
+        .messages({
+            'any.only': `sortBy must be one of ${EXPENSE_SORT_FIELDS.join(', ')}`,
+        }),
+    order: Joi.string().valid(...SORT_ORDERS).optional(),
+    dateFrom: Joi.date().optional(),
+    dateTo: Joi.date().min(Joi.ref('dateFrom')).optional().messages({
+        'date.min': 'dateTo must be greater than or equal to dateFrom',
+    }),
+});
+
+export default { createExpense, updateExpense, getExpenses, getAiSummary, exportExpenses, idParam };

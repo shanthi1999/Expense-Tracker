@@ -16,6 +16,11 @@ expenseRouter.get(
     validate(expenseValidator.getAiSummary, 'query'),
     expenseController.getAiSummary
 );
+expenseRouter.get(
+    '/export',
+    validate(expenseValidator.exportExpenses, 'query'),
+    expenseController.exportExpenseReport
+);
 expenseRouter.put(
     '/:id',
     validate(expenseValidator.idParam, 'params'),
