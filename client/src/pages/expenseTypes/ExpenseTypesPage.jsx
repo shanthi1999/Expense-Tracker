@@ -52,8 +52,8 @@ export default function ExpenseTypesPage() {
         defaultValues: { title: '', description: '', categoryColorCode: '#10b981' },
     });
 
-    const loadExpenseTypes = (page = pagination.page) => {
-        dispatch(fetchExpenseTypes({ page, limit: pagination.limit, title: search || undefined }));
+    const loadExpenseTypes = (page = pagination.page, limit = pagination.limit) => {
+        dispatch(fetchExpenseTypes({ page, limit, title: search || undefined }));
     };
 
     useEffect(() => {
@@ -187,7 +187,9 @@ export default function ExpenseTypesPage() {
                 page={pagination.page}
                 totalPages={totalPages}
                 total={pagination.total}
+                limit={pagination.limit}
                 onPageChange={(p) => loadExpenseTypes(p)}
+                onPageSizeChange={(limit) => loadExpenseTypes(1, limit)}
             />
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -1,19 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Receipt, FolderOpen, Tags, TrendingDown, Wallet, ArrowRight } from 'lucide-react';
+import { Receipt, FolderOpen, Tags, TrendingDown, Wallet, ArrowRight, Bot } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppDispatch';
 import { fetchExpenses } from '@/features/expense/expenseSlice';
 import { fetchCategories } from '@/features/category/categorySlice';
 import { fetchExpenseTypes } from '@/features/expenseType/expenseTypeSlice';
 import { PageHeader } from '@/components/common/PageHeader';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { AiSummaryPanel, AiSummaryTriggerCard } from '@/components/common/AiSummaryPanel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { formatBudgetUsageLabel, getOverBudgetExpenseIds } from '@/lib/budget';
 
 export default function DashboardPage() {
     const dispatch = useAppDispatch();
+    const [aiPanelOpen, setAiPanelOpen] = useState(false);
     const user = useAppSelector((state) => state.auth.user);
     const { expenses, pagination, status } = useAppSelector((state) => state.expense);
     const { pagination: catPagination } = useAppSelector((state) => state.category);
@@ -33,7 +37,9 @@ export default function DashboardPage() {
 
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
     const budget = user?.budget;
-    const budgetUsed = budget ? ((totalSpent / budget) * 100).toFixed(0) : null;
+    const budgetUsageLabel = formatBudgetUsageLabel(totalSpent, budget);
+    const overBudgetExpenseIds = getOverBudgetExpenseIds(expenses, budget);
+    const isOverBudget = budget != null && budget > 0 && totalSpent > budget;
 
     const stats = [
         {
@@ -61,8 +67,9 @@ export default function DashboardPage() {
             title: 'Monthly Budget',
             value: budget != null ? formatCurrency(budget) : '—',
             icon: Wallet,
-            description: budgetUsed ? `${budgetUsed}% of recent page spent` : 'Set in profile',
+            description: budgetUsageLabel,
             link: '/profile',
+            isWarning: isOverBudget,
         },
     ];
 
@@ -71,9 +78,17 @@ export default function DashboardPage() {
             <PageHeader
                 title={`Welcome, ${user?.firstName || 'User'}`}
                 description="Here's an overview of your expense tracking"
+                action={
+                    <Button variant="outline" size="sm" onClick={() => setAiPanelOpen(true)}>
+                        <Bot className="mr-2 h-4 w-4" />
+                        AI Summary
+                    </Button>
+                }
             />
 
-            <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-8 grid gap-6 lg:grid-cols-3">
+                <div className="space-y-8 lg:col-span-2">
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => (
                     <Card key={stat.title} className="transition-shadow hover:shadow-md">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -84,7 +99,14 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stat.value}</div>
-                            <p className="text-xs text-muted-foreground">{stat.description}</p>
+                            <p
+                                className={cn(
+                                    'text-xs text-muted-foreground',
+                                    stat.isWarning && 'font-medium text-destructive'
+                                )}
+                            >
+                                {stat.description}
+                            </p>
                             <Link to={stat.link}>
                                 <Button variant="link" className="mt-2 h-auto p-0 text-xs">
                                     View <ArrowRight className="ml-1 h-3 w-3" />
@@ -93,9 +115,9 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 ))}
-            </div>
+                    </div>
 
-            <Card>
+                    <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
@@ -124,19 +146,41 @@ export default function DashboardPage() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {expenses.map((exp) => (
+                            {expenses.map((exp) => {
+                                const exceedsBudget = overBudgetExpenseIds.has(exp.expenseId);
+
+                                return (
                                 <div
                                     key={exp.expenseId}
-                                    className="flex items-center justify-between rounded-lg border p-4"
+                                    className={cn(
+                                        'flex items-center justify-between rounded-lg border p-4 transition-shadow',
+                                        exceedsBudget
+                                            ? 'border-destructive/30 bg-destructive/5 shadow-md ring-1 ring-destructive/15'
+                                            : 'bg-card'
+                                    )}
                                 >
                                     <div>
-                                        <p className="font-medium">{exp.title}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium">{exp.title}</p>
+                                            {exceedsBudget && (
+                                                <Badge variant="destructive" className="text-[10px]">
+                                                    Over budget
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <p className="text-sm text-muted-foreground">
                                             {format(new Date(exp.date), 'MMM d, yyyy')}
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-semibold">{formatCurrency(exp.amount)}</p>
+                                        <p
+                                            className={cn(
+                                                'font-semibold',
+                                                exceedsBudget && 'text-destructive'
+                                            )}
+                                        >
+                                            {formatCurrency(exp.amount)}
+                                        </p>
                                         {exp.paymentMethod && (
                                             <Badge variant="secondary" className="mt-1">
                                                 {exp.paymentMethod}
@@ -144,11 +188,22 @@ export default function DashboardPage() {
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </CardContent>
-            </Card>
+                    </Card>
+                </div>
+
+                <div className="lg:col-span-1">
+                    <div className="lg:sticky lg:top-6">
+                        <AiSummaryTriggerCard onOpen={() => setAiPanelOpen(true)} />
+                    </div>
+                </div>
+            </div>
+
+            <AiSummaryPanel open={aiPanelOpen} onClose={() => setAiPanelOpen(false)} />
         </div>
     );
 }

@@ -1,6 +1,10 @@
 import expenseDbModelApi from '../../service_model/expense/expense.service.model.js';
+import categoryDbModelApi from '../../service_model/expense/category.service.model.js';
+import expenseTypeDbModelApi from '../../service_model/expense/expenseType.service.model.js';
 import categoryService from './category.service.js';
 import expenseTypeService from './expenseType.service.js';
+import aiService from '../../services/ai.service.js';
+import userService from '../user/user.service.js';
 import logger from '../../vendors/logger/logger.js';
 import commonEnums from '../../enums/common.enums.js';
 import AppError from '../../utils/AppError.js';
@@ -198,10 +202,67 @@ const getExpense = async (expenseId, userId, txId) => {
     }
 };
 
+const getAiSummary = async (expenseQuery, userId, txId) => {
+    logger.info(`[${txId}] [ExpenseService] [getAiSummary] Generating AI summary`, {
+        query: expenseQuery,
+        userId,
+    });
+
+    try {
+        const user = await userService.getUser(userId, txId);
+        const currency = user?.currency || 'USD';
+
+        const expenseList = await getExpenses(
+            { ...expenseQuery, page: 1, limit: 500, sortBy: 'date', order: 'DESC' },
+            userId,
+            txId
+        );
+
+        const categoryDBModelApi = new categoryDbModelApi();
+        const expenseTypeDBModelApi = new expenseTypeDbModelApi();
+
+        const [categoriesResult, expenseTypesResult] = await Promise.all([
+            categoryDBModelApi.getCategories({ userId }, 500, 0, {}, txId),
+            expenseTypeDBModelApi.getExpenseTypes({ userId }, 500, 0, {}, txId),
+        ]);
+
+        const categoryMap = Object.fromEntries(
+            (categoriesResult.data || []).map((c) => [c.categoryId, c.title])
+        );
+        const typeMap = Object.fromEntries(
+            (expenseTypesResult.data || []).map((t) => [t.expenseTypeId, t.title])
+        );
+
+        const enrichedExpenses = (expenseList.data || []).map((expense) => ({
+            title: expense.title,
+            amount: expense.amount,
+            category: categoryMap[expense.categoryId] || 'Unknown',
+            type: typeMap[expense.expenseTypeId] || 'Unknown',
+            date: expense.date ? new Date(expense.date).toISOString().slice(0, 10) : null,
+            paymentMethod: expense.paymentMethod || undefined,
+        }));
+
+        const summary = await aiService.summarizeExpenses(enrichedExpenses, currency);
+
+        logger.info(`[${txId}] [ExpenseService] [getAiSummary] AI summary generated`, {
+            expenseCount: enrichedExpenses.length,
+        });
+
+        return summary;
+    } catch (error) {
+        logger.error(`[${txId}] [ExpenseService] [getAiSummary] Failed`, {
+            error: error.message,
+        });
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Failed to generate AI summary: ${error.message}`, 500);
+    }
+};
+
 export default {
     getExpenses,
     getExpense,
     addExpense,
     updateExpense,
     deleteExpense,
+    getAiSummary,
 };

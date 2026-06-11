@@ -1,6 +1,8 @@
 import userService from '../service/user/user.service.js';
 import logger from '../vendors/logger/logger.js';
 import authUtils from '../vendors/jwt/auth.js';
+import AppError from '../utils/AppError.js';
+import uploadBufferToCloudinary, { isCloudinaryConfigured } from '../utils/cloudinaryUpload.js';
 
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
 
@@ -121,6 +123,48 @@ const updateUser = async (req, res, next) => {
     }
 };
 
+const uploadProfileImage = async (req, res, next) => {
+    const txId = req.id;
+
+    try {
+        if (!isCloudinaryConfigured()) {
+            throw new AppError(
+                'Cloudinary is not configured on the server. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to server/.env (API secret is in Cloudinary Dashboard → Settings → API Keys).',
+                503
+            );
+        }
+
+        if (!req.file) {
+            throw new AppError('No image file provided', 400);
+        }
+
+        const userId = req.user.userId;
+        const uploadResult = await uploadBufferToCloudinary(req.file.buffer, userId);
+
+        const user = await userService.updateUser(
+            userId,
+            { profileImage: uploadResult.secure_url },
+            txId
+        );
+
+        logger.info(`[${txId}] [UserController] [uploadProfileImage] Image uploaded`, {
+            userId,
+            profileImage: uploadResult.secure_url,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile image uploaded successfully',
+            data: {
+                profileImage: uploadResult.secure_url,
+                user,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     addUser,
     login,
@@ -128,4 +172,5 @@ export default {
     logout,
     getUser,
     updateUser,
+    uploadProfileImage,
 };

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { expenseSchema, PAYMENT_METHODS } from '@/schemas/expense.schema';
@@ -19,6 +19,8 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Pagination } from '@/components/common/Pagination';
 import { getTotalPages } from '@/lib/pagination';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ColorChip } from '@/components/common/ColorChip';
+import { SortableTableHead } from '@/components/common/SortableTableHead';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +61,14 @@ export default function ExpensesPage() {
     const [editing, setEditing] = useState(null);
     const [deleteId, setDeleteId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const [filters, setFilters] = useState({ categoryId: '', expenseTypeId: '' });
+    const [filters, setFilters] = useState({
+        categoryId: '',
+        expenseTypeId: '',
+        dateFrom: '',
+        dateTo: '',
+    });
+    const [sort, setSort] = useState({ sortBy: 'date', order: 'DESC' });
+    const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(expenseSchema),
@@ -74,27 +83,64 @@ export default function ExpensesPage() {
         },
     });
 
-    const loadExpenses = (page = pagination.page) => {
-        dispatch(
-            fetchExpenses({
-                page,
-                limit: pagination.limit,
-                categoryId: filters.categoryId || undefined,
-                expenseTypeId: filters.expenseTypeId || undefined,
-                sortBy: 'date',
-                order: 'DESC',
-            })
-        );
-    };
+    const loadExpenses = useCallback(
+        (page = pagination.page, sortState = sort, filterState = filters, limit = pagination.limit) => {
+            dispatch(
+                fetchExpenses({
+                    page,
+                    limit,
+                    categoryId: filterState.categoryId || undefined,
+                    expenseTypeId: filterState.expenseTypeId || undefined,
+                    dateFrom: filterState.dateFrom || undefined,
+                    dateTo: filterState.dateTo || undefined,
+                    sortBy: sortState.sortBy,
+                    order: sortState.order,
+                })
+            );
+        },
+        [dispatch, pagination.limit, pagination.page, sort, filters]
+    );
 
     useEffect(() => {
         dispatch(fetchCategories({ limit: 100 }));
         dispatch(fetchExpenseTypes({ limit: 100 }));
         loadExpenses(1);
-    }, []);
+    }, [dispatch]);
 
-    const getCategoryTitle = (id) => categories.find((c) => c.categoryId === id)?.title || id;
-    const getExpenseTypeTitle = (id) => expenseTypes.find((e) => e.expenseTypeId === id)?.title || id;
+    useEffect(() => {
+        if (status !== 'loading') {
+            setIsApplyingFilters(false);
+        }
+    }, [status]);
+
+    const getCategory = (id) => categories.find((c) => c.categoryId === id);
+    const getExpenseType = (id) => expenseTypes.find((e) => e.expenseTypeId === id);
+
+    const handleSort = (column) => {
+        const nextSort =
+            sort.sortBy !== column
+                ? { sortBy: column, order: 'DESC' }
+                : { sortBy: column, order: sort.order === 'DESC' ? 'ASC' : 'DESC' };
+        setSort(nextSort);
+        loadExpenses(1, nextSort, filters);
+    };
+
+    const applyFilters = () => {
+        setIsApplyingFilters(true);
+        loadExpenses(1, sort, filters);
+    };
+
+    const clearFilters = () => {
+        const cleared = { categoryId: '', expenseTypeId: '', dateFrom: '', dateTo: '' };
+        setFilters(cleared);
+        setIsApplyingFilters(true);
+        loadExpenses(1, sort, cleared);
+    };
+
+    const filterLoading = isApplyingFilters && status === 'loading';
+
+    const hasActiveFilters =
+        filters.categoryId || filters.expenseTypeId || filters.dateFrom || filters.dateTo;
 
     const formatCurrency = (amount) =>
         new Intl.NumberFormat(undefined, {
@@ -185,42 +231,112 @@ export default function ExpensesPage() {
                 </p>
             )}
 
-            <div className="mb-4 flex flex-wrap gap-2">
-                <Select
-                    value={filters.categoryId || 'all'}
-                    onValueChange={(v) => setFilters((f) => ({ ...f, categoryId: v === 'all' ? '' : v }))}
-                >
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All categories</SelectItem>
-                        {categories.map((c) => (
-                            <SelectItem key={c.categoryId} value={c.categoryId}>
-                                {c.title}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={filters.expenseTypeId || 'all'}
-                    onValueChange={(v) => setFilters((f) => ({ ...f, expenseTypeId: v === 'all' ? '' : v }))}
-                >
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="All types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All types</SelectItem>
-                        {expenseTypes.map((e) => (
-                            <SelectItem key={e.expenseTypeId} value={e.expenseTypeId}>
-                                {e.title}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Button variant="secondary" onClick={() => loadExpenses(1)}>
-                    Apply Filters
-                </Button>
+            <div className="mb-4 rounded-lg border bg-card p-4">
+                <p className="mb-3 text-sm font-medium">Filters</p>
+                <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs text-muted-foreground">Category</Label>
+                        <Select
+                            value={filters.categoryId || 'all'}
+                            onValueChange={(v) =>
+                                setFilters((f) => ({ ...f, categoryId: v === 'all' ? '' : v }))
+                            }
+                        >
+                            <SelectTrigger className="h-10 w-full">
+                                <SelectValue placeholder="All categories" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All categories</SelectItem>
+                                {categories.map((c) => (
+                                    <SelectItem key={c.categoryId} value={c.categoryId}>
+                                        <span className="flex items-center gap-2">
+                                            <ColorChip label={c.title} color={c.categoryColorCode} />
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs text-muted-foreground">Type</Label>
+                        <Select
+                            value={filters.expenseTypeId || 'all'}
+                            onValueChange={(v) =>
+                                setFilters((f) => ({ ...f, expenseTypeId: v === 'all' ? '' : v }))
+                            }
+                        >
+                            <SelectTrigger className="h-10 w-full">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                {expenseTypes.map((e) => (
+                                    <SelectItem key={e.expenseTypeId} value={e.expenseTypeId}>
+                                        <span className="flex items-center gap-2">
+                                            <ColorChip label={e.title} color={e.categoryColorCode} />
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="dateFrom" className="text-xs text-muted-foreground">
+                            From
+                        </Label>
+                        <Input
+                            id="dateFrom"
+                            type="date"
+                            value={filters.dateFrom}
+                            onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
+                            className="h-10 w-full"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="dateTo" className="text-xs text-muted-foreground">
+                            To
+                        </Label>
+                        <Input
+                            id="dateTo"
+                            type="date"
+                            value={filters.dateTo}
+                            min={filters.dateFrom || undefined}
+                            onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
+                            className="h-10 w-full"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-1">
+                        <Label className="text-xs text-muted-foreground">Apply</Label>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="default"
+                                className="h-10 flex-1 disabled:opacity-100 lg:flex-none"
+                                onClick={applyFilters}
+                                disabled={filterLoading}
+                            >
+                                {filterLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Applying...
+                                    </>
+                                ) : (
+                                    'Apply Filters'
+                                )}
+                            </Button>
+                            {hasActiveFilters && (
+                                <Button
+                                    variant="outline"
+                                    className="h-10 flex-1 lg:flex-none"
+                                    onClick={clearFilters}
+                                    disabled={filterLoading}
+                                >
+                                    <X className="mr-1 h-4 w-4" />
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {status === 'loading' && expenses.length === 0 ? (
@@ -231,8 +347,21 @@ export default function ExpensesPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Title</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                                <SortableTableHead
+                                    label="Amount"
+                                    sortKey="amount"
+                                    activeSort={sort.sortBy}
+                                    activeOrder={sort.order}
+                                    onSort={handleSort}
+                                />
+                                <SortableTableHead
+                                    label="Date"
+                                    sortKey="date"
+                                    activeSort={sort.sortBy}
+                                    activeOrder={sort.order}
+                                    onSort={handleSort}
+                                    className="hidden sm:table-cell"
+                                />
                                 <TableHead className="hidden md:table-cell">Category</TableHead>
                                 <TableHead className="hidden lg:table-cell">Type</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -246,16 +375,38 @@ export default function ExpensesPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                expenses.map((exp) => (
+                                expenses.map((exp) => {
+                                    const category = getCategory(exp.categoryId);
+                                    const expenseType = getExpenseType(exp.expenseTypeId);
+
+                                    return (
                                     <TableRow key={exp.expenseId}>
                                         <TableCell>
-                                            <div>
+                                            <div className="space-y-1.5">
                                                 <p className="font-medium">{exp.title}</p>
-                                                {exp.paymentMethod && (
-                                                    <Badge variant="secondary" className="mt-1 text-xs">
-                                                        {exp.paymentMethod}
-                                                    </Badge>
-                                                )}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {exp.paymentMethod && (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {exp.paymentMethod}
+                                                        </Badge>
+                                                    )}
+                                                    <span className="md:hidden">
+                                                        {category && (
+                                                            <ColorChip
+                                                                label={category.title}
+                                                                color={category.categoryColorCode}
+                                                            />
+                                                        )}
+                                                    </span>
+                                                    <span className="lg:hidden">
+                                                        {expenseType && (
+                                                            <ColorChip
+                                                                label={expenseType.title}
+                                                                color={expenseType.categoryColorCode}
+                                                            />
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(exp.amount)}</TableCell>
@@ -263,10 +414,24 @@ export default function ExpensesPage() {
                                             {format(new Date(exp.date), 'MMM d, yyyy')}
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
-                                            {getCategoryTitle(exp.categoryId)}
+                                            {category ? (
+                                                <ColorChip
+                                                    label={category.title}
+                                                    color={category.categoryColorCode}
+                                                />
+                                            ) : (
+                                                '—'
+                                            )}
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell">
-                                            {getExpenseTypeTitle(exp.expenseTypeId)}
+                                            {expenseType ? (
+                                                <ColorChip
+                                                    label={expenseType.title}
+                                                    color={expenseType.categoryColorCode}
+                                                />
+                                            ) : (
+                                                '—'
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-1">
@@ -279,7 +444,8 @@ export default function ExpensesPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
@@ -290,7 +456,9 @@ export default function ExpensesPage() {
                 page={pagination.page}
                 totalPages={totalPages}
                 total={pagination.total}
+                limit={pagination.limit}
                 onPageChange={(p) => loadExpenses(p)}
+                onPageSizeChange={(limit) => loadExpenses(1, sort, filters, limit)}
             />
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

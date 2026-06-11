@@ -4,6 +4,7 @@ import userReducer from '../features/user/userSlice.js';
 import categoryReducer from '../features/category/categorySlice.js';
 import expenseTypeReducer from '../features/expenseType/expenseTypeSlice.js';
 import expenseReducer from '../features/expense/expenseSlice.js';
+import aiReducer from '../features/ai/aiSlice.js';
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
         category: categoryReducer,
         expenseType: expenseTypeReducer,
         expense: expenseReducer,
+        ai: aiReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

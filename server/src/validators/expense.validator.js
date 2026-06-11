@@ -88,4 +88,11 @@ const idParam = Joi.object({
     }),
 });
 
-export default { createExpense, updateExpense, getExpenses, idParam };
+const getAiSummary = Joi.object({
+    dateFrom: Joi.date().optional(),
+    dateTo: Joi.date().min(Joi.ref('dateFrom')).optional().messages({
+        'date.min': 'dateTo must be greater than or equal to dateFrom',
+    }),
+});
+
+export default { createExpense, updateExpense, getExpenses, getAiSummary, idParam };

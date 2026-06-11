@@ -52,8 +52,8 @@ export default function CategoriesPage() {
         defaultValues: { title: '', description: '', categoryColorCode: '#6366f1' },
     });
 
-    const loadCategories = (page = pagination.page) => {
-        dispatch(fetchCategories({ page, limit: pagination.limit, title: search || undefined }));
+    const loadCategories = (page = pagination.page, limit = pagination.limit) => {
+        dispatch(fetchCategories({ page, limit, title: search || undefined }));
     };
 
     useEffect(() => {
@@ -188,7 +188,9 @@ export default function CategoriesPage() {
                 page={pagination.page}
                 totalPages={totalPages}
                 total={pagination.total}
+                limit={pagination.limit}
                 onPageChange={(p) => loadCategories(p)}
+                onPageSizeChange={(limit) => loadCategories(1, limit)}
             />
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

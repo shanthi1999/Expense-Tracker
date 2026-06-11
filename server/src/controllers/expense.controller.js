@@ -86,9 +86,33 @@ const deleteExpense = async (req, res, next) => {
     }
 };
 
+const getAiSummary = async (req, res, next) => {
+    const txId = req.id;
+    logger.info(`[${txId}] [ExpenseController] [getAiSummary] Request received`, {
+        query: req.query,
+    });
+    try {
+        const summary = await expenseService.getAiSummary(
+            req.validatedQuery ?? req.query,
+            req.user.userId,
+            txId
+        );
+        logger.info(`[${txId}] [ExpenseController] [getAiSummary] Summary generated successfully`);
+        return res.status(200).json({
+            success: true,
+            message: 'AI summary generated successfully',
+            summary: summary.summary,
+            data: summary,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     addExpense,
     getExpense,
     updateExpense,
     deleteExpense,
+    getAiSummary,
 };

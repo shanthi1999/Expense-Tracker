@@ -8,6 +8,7 @@ import { fetchProfile, updateProfile } from '@/features/user/userSlice';
 import { fetchCurrentUser } from '@/features/auth/authSlice';
 import { PageHeader } from '@/components/common/PageHeader';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ProfileImageUpload } from '@/components/common/ProfileImageUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,7 +88,20 @@ export default function ProfilePage() {
                         <CardTitle>Account Info</CardTitle>
                         <CardDescription>Your registered details</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
+                    <CardContent className="space-y-4 text-sm">
+                        <div className="flex justify-center">
+                            {user?.profileImage ? (
+                                <img
+                                    src={user.profileImage}
+                                    alt={`${user.firstName} profile`}
+                                    className="h-24 w-24 rounded-full border-2 border-border object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted text-muted-foreground">
+                                    No photo
+                                </div>
+                            )}
+                        </div>
                         <p>
                             <span className="text-muted-foreground">Email:</span>{' '}
                             <span className="font-medium">{user?.email}</span>
@@ -158,10 +172,21 @@ export default function ProfilePage() {
                                     <Input id="currency" {...form.register('currency')} />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="profileImage">Profile Image URL</Label>
-                                <Input id="profileImage" {...form.register('profileImage')} />
-                            </div>
+                            <ProfileImageUpload
+                                userId={user?.userId}
+                                value={form.watch('profileImage')}
+                                onChange={(url) => form.setValue('profileImage', url, { shouldDirty: true })}
+                                onUploaded={() => {
+                                    dispatch(fetchCurrentUser());
+                                    dispatch(fetchProfile());
+                                }}
+                            />
+                            <input type="hidden" {...form.register('profileImage')} />
+                            {form.formState.errors.profileImage && (
+                                <p className="text-sm text-destructive">
+                                    {form.formState.errors.profileImage.message}
+                                </p>
+                            )}
                             <Button type="submit" disabled={form.formState.isSubmitting || status === 'loading'}>
                                 {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
                             </Button>

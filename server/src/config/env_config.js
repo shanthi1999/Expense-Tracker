@@ -27,5 +27,9 @@ const envConfig = {
             saltRounds: 10,
         },
     },
+    groq: {
+        apiKey: process.env.GROQ_API_KEY,
+        model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+    },
 };
 export default envConfig;
