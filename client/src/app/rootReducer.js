@@ -5,6 +5,8 @@ import categoryReducer from '../features/category/categorySlice.js';
 import expenseTypeReducer from '../features/expenseType/expenseTypeSlice.js';
 import expenseReducer from '../features/expense/expenseSlice.js';
 import aiReducer from '../features/ai/aiSlice.js';
+import scheduledExpenseReducer from '../features/scheduledExpense/scheduledExpenseSlice.js';
+import notificationReducer from '../features/notification/notificationSlice.js';
 
 export const store = configureStore({
     reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
         expenseType: expenseTypeReducer,
         expense: expenseReducer,
         ai: aiReducer,
+        scheduledExpense: scheduledExpenseReducer,
+        notification: notificationReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

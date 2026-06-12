@@ -1,6 +1,5 @@
 import logger from '../vendors/logger/logger.js';
 
-/** Express 5 exposes req.query as read-only — store validated query on req.validatedQuery. */
 const applyValidated = (req, source, value) => {
     if (source === 'query') {
         req.validatedQuery = value;
@@ -24,8 +23,25 @@ const validate =
             stripUnknown: true,
             convert: true,
         });
-
         if (error) {
+            const hasUnsupportedFields = error.details.some(
+                (detail) => detail.type === 'object.unknown',
+            );
+
+            if (hasUnsupportedFields) {
+                const unsupportedFields = error.details
+                    .filter((detail) => detail.type === 'object.unknown')
+                    .map(
+                        (detail) =>
+                            detail.context.label ?? detail.context.key ?? 'unknown',
+                    );
+
+                return res.status(400).json({
+                    success: false,
+                    message: `The request contains the unsupported field(s): ${unsupportedFields.join(', ')}, please remove those fields and retry`,
+                });
+            }
+
             const errors = error.details.map((d) => d.message.replace(/['"]/g, ''));
             logger.warn(`[${txId}] [Validate] Validation failed on ${source}`, { errors });
             return res.status(400).json({

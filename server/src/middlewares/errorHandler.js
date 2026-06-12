@@ -1,4 +1,5 @@
 import logger from '../vendors/logger/logger.js';
+import envConfig from '../config/env_config.js';
 
 const errorHandler = (err, req, res, next) => {
     const txId = req.id || 'unknown';
@@ -19,7 +20,7 @@ const errorHandler = (err, req, res, next) => {
     }
 
     const message =
-        isServerError && process.env.NODE_ENV === 'production'
+        isServerError && envConfig.isProduction
             ? 'Internal server error'
             : err.message || 'Internal server error';
 

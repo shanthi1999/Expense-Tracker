@@ -1,17 +1,22 @@
 import { v2 as cloudinary } from 'cloudinary';
+import envConfig from '../../config/env_config.js';
 
 const isPlaceholder = (value) =>
     !value || value === 'your_cloud_name' || value === 'your_api_secret' || value === 'your_api_key';
 
+const getCloudinaryCredentials = () => ({
+    url: envConfig.cloudinary?.url,
+    cloudName: envConfig.cloudinary?.cloudName,
+    apiKey: envConfig.cloudinary?.apiKey,
+    apiSecret: envConfig.cloudinary?.apiSecret,
+});
+
 /** Apply Cloudinary config from env on each use (safe after .env updates + server restart). */
 export const configureCloudinary = () => {
-    const cloudinaryUrl = process.env.CLOUDINARY_URL;
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const { url, cloudName, apiKey, apiSecret } = getCloudinaryCredentials();
 
-    if (cloudinaryUrl) {
-        cloudinary.config({ secure: true });
+    if (url) {
+        cloudinary.config({ cloudinary_url: url, secure: true });
         return;
     }
 
@@ -26,13 +31,10 @@ export const configureCloudinary = () => {
 };
 
 export const isCloudinaryConfigured = () => {
-    const cloudinaryUrl = process.env.CLOUDINARY_URL;
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const { url, cloudName, apiKey, apiSecret } = getCloudinaryCredentials();
 
     return (
-        Boolean(cloudinaryUrl) ||
+        Boolean(url) ||
         Boolean(cloudName && apiKey && apiSecret && !isPlaceholder(cloudName) && !isPlaceholder(apiSecret))
     );
 };

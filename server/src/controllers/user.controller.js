@@ -2,6 +2,7 @@ import userService from '../service/user/user.service.js';
 import logger from '../vendors/logger/logger.js';
 import authUtils from '../vendors/jwt/auth.js';
 import AppError from '../utils/AppError.js';
+import envConfig from '../config/env_config.js';
 import uploadBufferToCloudinary from '../clients/cloudinary/cloudinary.client.js';
 import { isCloudinaryConfigured } from '../vendors/cloudinary/cloudinary.js';
 
@@ -9,7 +10,7 @@ const REFRESH_TOKEN_COOKIE = 'refreshToken';
 
 const refreshTokenCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: envConfig.isProduction,
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
@@ -82,7 +83,7 @@ const logout = async (req, res, next) => {
         }
         res.clearCookie(REFRESH_TOKEN_COOKIE, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: envConfig.isProduction,
             sameSite: 'strict',
         });
         logger.info(`[${txId}] [UserController] [logout] User logged out`);

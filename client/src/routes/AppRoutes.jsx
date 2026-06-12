@@ -10,6 +10,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import CategoriesPage from '@/pages/categories/CategoriesPage';
 import ExpenseTypesPage from '@/pages/expenseTypes/ExpenseTypesPage';
 import ExpensesPage from '@/pages/expenses/ExpensesPage';
+import ScheduledExpensesPage from '@/pages/scheduledExpenses/ScheduledExpensesPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 
 function AppRoutes() {
@@ -26,6 +27,7 @@ function AppRoutes() {
                 <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/expenses" element={<ExpensesPage />} />
+                    <Route path="/scheduled-expenses" element={<ScheduledExpensesPage />} />
                     <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/expense-types" element={<ExpenseTypesPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

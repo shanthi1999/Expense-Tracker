@@ -318,21 +318,21 @@ export function AiSummaryTriggerCard({ onOpen }) {
         <button
             type="button"
             onClick={onOpen}
-            className="group w-full rounded-xl border bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4 text-left transition-all hover:border-primary/40 hover:shadow-md"
+            className="group flex h-full min-h-[140px] w-full flex-col rounded-xl border bg-gradient-to-br from-primary/10 via-background to-primary/5 p-5 text-left transition-all hover:border-primary/40 hover:shadow-md"
         >
             <div className="flex items-start justify-between gap-3">
-                <div>
-                    <div className="mb-1 flex items-center gap-2">
-                        <Bot className="h-5 w-5 text-primary" />
+                <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-center gap-2">
+                        <Bot className="h-5 w-5 shrink-0 text-primary" />
                         <span className="font-semibold">AI Expense Summary</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
                         Get spending insights, patterns, and saving tips powered by Llama 3.1 on Groq.
                     </p>
                 </div>
                 <Sparkles className="h-5 w-5 shrink-0 text-primary opacity-70 transition-opacity group-hover:opacity-100" />
             </div>
-            <p className="mt-3 text-xs font-medium text-primary">Click to open →</p>
+            <p className="mt-auto pt-4 text-xs font-medium text-primary">Click to open →</p>
         </button>
     );
 }

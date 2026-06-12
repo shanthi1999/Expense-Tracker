@@ -31,5 +31,13 @@ const envConfig = {
         apiKey: process.env.GROQ_API_KEY,
         model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     },
+    cloudinary: {
+        url: process.env.CLOUDINARY_URL,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        apiSecret: process.env.CLOUDINARY_API_SECRET,
+    },
+    nodeEnv: process.env.NODE_ENV || 'development',
+    isProduction: process.env.NODE_ENV === 'production',
 };
 export default envConfig;

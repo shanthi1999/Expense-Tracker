@@ -9,7 +9,10 @@ import {
     Menu,
     X,
     Wallet,
+    CalendarClock,
 } from 'lucide-react';
+import { NotificationBell } from '@/components/common/NotificationBell';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -21,6 +24,7 @@ import { logoutUser } from '@/features/auth/authSlice';
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/expenses', label: 'Expenses', icon: Receipt },
+    { to: '/scheduled-expenses', label: 'Scheduled', icon: CalendarClock },
     { to: '/categories', label: 'Categories', icon: FolderOpen },
     { to: '/expense-types', label: 'Expense Types', icon: Tags },
     { to: '/profile', label: 'Profile', icon: User },
@@ -51,6 +55,7 @@ export function AppLayout() {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const user = useAppSelector((state) => state.auth.user);
+    const { unreadCount, pushPermission, requestPermission } = useNotifications(!!user);
 
     const handleLogout = async () => {
         await dispatch(logoutUser());
@@ -71,7 +76,12 @@ export function AppLayout() {
                     <Wallet className="h-5 w-5 text-primary" />
                     Expense Tracker
                 </div>
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-1">
+                    <NotificationBell
+                        unreadCount={unreadCount}
+                        pushPermission={pushPermission}
+                        onRequestPermission={requestPermission}
+                    />
                     <ThemeToggle />
                 </div>
             </header>
@@ -132,6 +142,11 @@ export function AppLayout() {
                                 </div>
                             )}
                             <div className="flex items-center gap-2 px-1">
+                                <NotificationBell
+                        unreadCount={unreadCount}
+                        pushPermission={pushPermission}
+                        onRequestPermission={requestPermission}
+                    />
                                 <ThemeToggle />
                                 <Button variant="ghost" className="flex-1 justify-start gap-2" onClick={handleLogout}>
                                     <LogOut className="h-4 w-4" />
