@@ -1,4 +1,4 @@
-/** Budget usage label — splits over 100% as "100% + 25%". */
+/** Budget usage label — over 100% uses "+ N%" when under 2x total, "+ Nx" when at/above 2x. */
 export function formatBudgetUsageLabel(totalSpent, budget) {
     if (budget == null || budget <= 0) return 'Set in profile';
 
@@ -8,8 +8,18 @@ export function formatBudgetUsageLabel(totalSpent, budget) {
         return `${Math.round(percent)}% of budget spent (recent)`;
     }
 
-    const overPercent = Math.round(percent - 100);
-    return `100% + ${overPercent}% of budget spent (recent)`;
+    const overMultiplier = (totalSpent - budget) / budget;
+
+    if (overMultiplier < 1) {
+        const overPercent = Math.round(overMultiplier * 100);
+        return `100% + ${overPercent}% of budget spent (recent)`;
+    }
+
+    const multiplierLabel = Number.isInteger(overMultiplier)
+        ? `${overMultiplier}x`
+        : `${parseFloat(overMultiplier.toFixed(1))}x`;
+
+    return `100% + ${multiplierLabel} of budget spent (recent)`;
 }
 
 /** Expense IDs that push cumulative spending over the budget (chronological order). */

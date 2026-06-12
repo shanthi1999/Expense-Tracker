@@ -39,6 +39,9 @@ const expenseSchema = new mongoose.Schema(
             type: String,
             enum: Object.values(expenseEnums.paymentMethods),
         },
+        receiptUrl: {
+            type: String,
+        },
         userId: {
             type: String,
             required: true,

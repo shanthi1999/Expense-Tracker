@@ -9,6 +9,12 @@ import expenseReportExport from '../../utils/expenseReportExport.js';
 import logger from '../../vendors/logger/logger.js';
 import commonEnums from '../../enums/common.enums.js';
 import AppError from '../../utils/AppError.js';
+import ocrProvider from '../../vendors/ocr/ocr.provider.js';
+import receiptOcrService from '../../services/receiptOcr.service.js';
+import voiceExpenseService from '../../services/voiceExpense.service.js';
+import { uploadReceiptImage } from '../../clients/cloudinary/cloudinary.client.js';
+import { isCloudinaryConfigured } from '../../vendors/cloudinary/cloudinary.js';
+import envConfig from '../../config/env_config.js';
 
 const validateExpense = async (expenseId, userId, txId) => {
     logger.info(`[${txId}] [ExpenseService] [validateExpense] Validating expense`, {
@@ -315,6 +321,121 @@ const exportExpenses = async (expenseQuery, userId, txId) => {
     }
 };
 
+const scanReceipt = async (fileBuffer, userId, txId) => {
+    logger.info(`[${txId}] [ExpenseService] [scanReceipt] Scanning receipt`, { userId });
+
+    try {
+        const user = await userService.getUser(userId, txId);
+        const categoryDBModelApi = new categoryDbModelApi();
+        const categoriesResult = await categoryDBModelApi.getCategories({ userId }, 100, 0, {}, txId);
+        const categories = categoriesResult.data || [];
+
+        if (!categories.length) {
+            throw new AppError('Create at least one category before scanning receipts.', 400);
+        }
+
+        const rawText = await ocrProvider.extractText(
+            fileBuffer,
+            envConfig.ocr.provider,
+            txId
+        );
+
+        if (!rawText) {
+            throw new AppError(
+                'Could not read text from the receipt. Try a clearer, well-lit photo.',
+                422
+            );
+        }
+
+        const parsed = await receiptOcrService.parseReceiptText(
+            rawText,
+            categories,
+            user?.currency || 'USD'
+        );
+
+        let receiptUrl = null;
+        if (isCloudinaryConfigured()) {
+            try {
+                const upload = await uploadReceiptImage(fileBuffer, userId);
+                receiptUrl = upload.secure_url;
+            } catch (uploadError) {
+                logger.warn(`[${txId}] [ExpenseService] [scanReceipt] Receipt upload failed`, {
+                    error: uploadError.message,
+                });
+            }
+        }
+
+        logger.info(`[${txId}] [ExpenseService] [scanReceipt] Receipt parsed`, {
+            storeName: parsed.storeName,
+            totalAmount: parsed.totalAmount,
+        });
+
+        return {
+            ...parsed,
+            title: parsed.storeName,
+            amount: parsed.totalAmount,
+            receiptUrl,
+            rawText,
+        };
+    } catch (error) {
+        logger.error(`[${txId}] [ExpenseService] [scanReceipt] Failed`, { error: error.message });
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Failed to scan receipt: ${error.message}`, 500);
+    }
+};
+
+const parseVoiceExpense = async (transcript, userId, txId) => {
+    logger.info(`[${txId}] [ExpenseService] [parseVoiceExpense] Parsing voice input`, { userId });
+
+    try {
+        const user = await userService.getUser(userId, txId);
+        const categoryDBModelApi = new categoryDbModelApi();
+        const expenseTypeDBModelApi = new expenseTypeDbModelApi();
+
+        const [categoriesResult, expenseTypesResult] = await Promise.all([
+            categoryDBModelApi.getCategories({ userId }, 100, 0, {}, txId),
+            expenseTypeDBModelApi.getExpenseTypes({ userId }, 100, 0, {}, txId),
+        ]);
+
+        const categories = categoriesResult.data || [];
+        const expenseTypes = expenseTypesResult.data || [];
+
+        if (!categories.length) {
+            throw new AppError('Create at least one category before using voice entry.', 400);
+        }
+        if (!expenseTypes.length) {
+            throw new AppError('Create at least one expense type before using voice entry.', 400);
+        }
+
+        const parsed = await voiceExpenseService.parseVoiceTranscript(
+            transcript,
+            categories,
+            expenseTypes,
+            user?.currency || 'USD'
+        );
+
+        if (!parsed.title || parsed.amount == null) {
+            throw new AppError(
+                'Could not extract title and amount. Try: "Spent 500 rupees on petrol".',
+                422
+            );
+        }
+
+        logger.info(`[${txId}] [ExpenseService] [parseVoiceExpense] Parsed`, {
+            title: parsed.title,
+            amount: parsed.amount,
+        });
+
+        return parsed;
+    } catch (error) {
+        logger.error(`[${txId}] [ExpenseService] [parseVoiceExpense] Failed`, {
+            error: error.message,
+        });
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Failed to parse voice expense: ${error.message}`, 500);
+    }
+};
+
 export default {
     getExpenses,
     getExpense,
@@ -323,4 +444,6 @@ export default {
     deleteExpense,
     getAiSummary,
     exportExpenses,
+    scanReceipt,
+    parseVoiceExpense,
 };

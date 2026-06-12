@@ -10,7 +10,10 @@ import {
     ArrowRight,
     Bot,
     CalendarClock,
+    PiggyBank,
 } from 'lucide-react';
+import { fetchSavingsGoals } from '@/features/savingsGoal/savingsGoalSlice';
+import { SavingsGoalCard } from '@/components/common/SavingsGoalCard';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppDispatch';
 import { fetchExpenses } from '@/features/expense/expenseSlice';
 import { fetchScheduledExpenses } from '@/features/scheduledExpense/scheduledExpenseSlice';
@@ -76,6 +79,9 @@ export default function DashboardPage() {
     );
     const { pagination: catPagination } = useAppSelector((state) => state.category);
     const { pagination: typePagination } = useAppSelector((state) => state.expenseType);
+    const { goals: savingsGoals, pagination: savingsPagination } = useAppSelector(
+        (state) => state.savingsGoal
+    );
 
     useEffect(() => {
         dispatch(fetchExpenses({ page: 1, limit: 5, sortBy: 'date', order: 'DESC' }));
@@ -90,6 +96,7 @@ export default function DashboardPage() {
         );
         dispatch(fetchCategories({ page: 1, limit: 1 }));
         dispatch(fetchExpenseTypes({ page: 1, limit: 1 }));
+        dispatch(fetchSavingsGoals({ page: 1, limit: 3, activeOnly: true }));
     }, [dispatch]);
 
     const formatCurrency = (amount) =>
@@ -134,6 +141,13 @@ export default function DashboardPage() {
             link: '/scheduled-expenses',
         },
         {
+            title: 'Savings Goals',
+            value: savingsPagination.total,
+            icon: PiggyBank,
+            description: 'Active goals',
+            link: '/savings-goals',
+        },
+        {
             title: 'Monthly Budget',
             value: budget != null ? formatCurrency(budget) : '—',
             icon: Wallet,
@@ -156,7 +170,7 @@ export default function DashboardPage() {
                 }
             />
 
-            <div className="mb-8 grid auto-rows-fr grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+            <div className="mb-8 grid auto-rows-fr grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                 {stats.map((stat) => (
                     <StatCard key={stat.title} {...stat} />
                 ))}
@@ -303,6 +317,48 @@ export default function DashboardPage() {
                                                     {formatCurrency(schedule.amount)}
                                                 </p>
                                             }
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <PiggyBank className="h-5 w-5" />
+                                        Savings Goals
+                                    </CardTitle>
+                                    <CardDescription>Track progress toward your targets</CardDescription>
+                                </div>
+                                <Link to="/savings-goals">
+                                    <Button variant="outline" size="sm">
+                                        Manage
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {savingsGoals.length === 0 ? (
+                                <div className="py-6 text-center text-muted-foreground">
+                                    <p>No active savings goals.</p>
+                                    <Link to="/savings-goals">
+                                        <Button className="mt-3" variant="outline" size="sm">
+                                            Create a goal
+                                        </Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {savingsGoals.map((goal) => (
+                                        <SavingsGoalCard
+                                            key={goal.savingsGoalId}
+                                            goal={goal}
+                                            formatCurrency={formatCurrency}
+                                            compact
                                         />
                                     ))}
                                 </div>

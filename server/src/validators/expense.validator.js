@@ -35,6 +35,7 @@ const createExpense = Joi.object({
         .messages({
             'any.only': `paymentMethod must be one of ${PAYMENT_METHODS.join(', ')}`,
         }),
+    receiptUrl: Joi.string().uri().optional(),
 });
 
 const updateExpense = Joi.object({
@@ -54,6 +55,7 @@ const updateExpense = Joi.object({
         .messages({
             'any.only': `paymentMethod must be one of ${PAYMENT_METHODS.join(', ')}`,
         }),
+    receiptUrl: Joi.string().uri().optional().allow(null),
 })
     .min(1)
     .messages({
@@ -119,4 +121,19 @@ const exportExpenses = Joi.object({
     }),
 });
 
-export default { createExpense, updateExpense, getExpenses, getAiSummary, exportExpenses, idParam };
+const parseVoiceExpense = Joi.object({
+    transcript: Joi.string().trim().min(3).max(500).required().messages({
+        'string.min': 'transcript must be at least 3 characters',
+        'any.required': 'transcript is required',
+    }),
+});
+
+export default {
+    createExpense,
+    updateExpense,
+    getExpenses,
+    getAiSummary,
+    exportExpenses,
+    idParam,
+    parseVoiceExpense,
+};

@@ -37,6 +37,9 @@ const envConfig = {
         apiKey: process.env.CLOUDINARY_API_KEY,
         apiSecret: process.env.CLOUDINARY_API_SECRET,
     },
+    ocr: {
+        provider: process.env.OCR_PROVIDER || 'TESSERACT',
+    },
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
 };

@@ -6,6 +6,7 @@ import categoryRoutes from './expense/category.route.js';
 import expenseTypeRoutes from './expense/expenseType.route.js';
 import scheduledExpenseRoutes from './expense/scheduledExpense.route.js';
 import notificationRoutes from './notification/notification.route.js';
+import savingsGoalRoutes from './savings/savingsGoal.route.js';
 import authenticate from '../middlewares/authenticate.js';
 
 const routes = express.Router();
@@ -17,5 +18,6 @@ routes.use('/category', authenticate, categoryRoutes);
 routes.use('/expenseType', authenticate, expenseTypeRoutes);
 routes.use('/scheduledExpense', authenticate, scheduledExpenseRoutes);
 routes.use('/notification', authenticate, notificationRoutes);
+routes.use('/savingsGoal', authenticate, savingsGoalRoutes);
 
 export default routes;

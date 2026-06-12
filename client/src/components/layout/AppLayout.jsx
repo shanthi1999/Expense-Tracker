@@ -10,6 +10,7 @@ import {
     X,
     Wallet,
     CalendarClock,
+    PiggyBank,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -25,6 +26,7 @@ const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/expenses', label: 'Expenses', icon: Receipt },
     { to: '/scheduled-expenses', label: 'Scheduled', icon: CalendarClock },
+    { to: '/savings-goals', label: 'Savings Goals', icon: PiggyBank },
     { to: '/categories', label: 'Categories', icon: FolderOpen },
     { to: '/expense-types', label: 'Expense Types', icon: Tags },
     { to: '/profile', label: 'Profile', icon: User },

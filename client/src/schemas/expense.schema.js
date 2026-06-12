@@ -10,6 +10,7 @@ export const expenseSchema = z.object({
     date: z.string().min(1, 'Date is required'),
     description: z.string().trim().max(500).optional().or(z.literal('')),
     paymentMethod: z.enum(PAYMENT_METHODS).optional().or(z.literal('')),
+    receiptUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export const expenseUpdateSchema = expenseSchema.partial().refine(

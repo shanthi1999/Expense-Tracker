@@ -1,5 +1,6 @@
 import expenseService from '../service/expense/expense.service.js';
 import logger from '../vendors/logger/logger.js';
+import AppError from '../utils/AppError.js';
 
 const addExpense = async (req, res, next) => {
     const txId = req.id;
@@ -131,6 +132,48 @@ const exportExpenseReport = async (req, res, next) => {
     }
 };
 
+const scanReceipt = async (req, res, next) => {
+    const txId = req.id;
+    logger.info(`[${txId}] [ExpenseController] [scanReceipt] Request received`);
+
+    try {
+        if (!req.file?.buffer) {
+            throw new AppError('Receipt image is required', 400);
+        }
+
+        const result = await expenseService.scanReceipt(req.file.buffer, req.user.userId, txId);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Receipt scanned successfully',
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const parseVoiceExpense = async (req, res, next) => {
+    const txId = req.id;
+    logger.info(`[${txId}] [ExpenseController] [parseVoiceExpense] Request received`);
+
+    try {
+        const result = await expenseService.parseVoiceExpense(
+            req.body.transcript,
+            req.user.userId,
+            txId
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Voice expense parsed successfully',
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     addExpense,
     getExpense,
@@ -138,4 +181,6 @@ export default {
     deleteExpense,
     getAiSummary,
     exportExpenseReport,
+    scanReceipt,
+    parseVoiceExpense,
 };
