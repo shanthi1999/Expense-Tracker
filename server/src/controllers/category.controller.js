@@ -1,4 +1,5 @@
-import categoryService from '../service/expense/category.service.js';
+import categoryService from '../services/expense/category.service.js';
+import apiResponseHelper from '../utils/apiResponseHelper.js';
 
 const addCategory = async (req, res, next) => {
     const txId = req.id;
@@ -6,11 +7,12 @@ const addCategory = async (req, res, next) => {
     try {
         const category = await categoryService.addCategory(req.body, req.user.userId, txId);
 
-        res.status(201).json({
-            success: true,
-            message: 'Category created successfully',
-            data: category,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            category,
+            apiResponseHelper.responseFlags.created
+        );
     } catch (error) {
         next(error);
     }
@@ -26,11 +28,12 @@ const getCategories = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Categories fetched successfully',
-            data: categories,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            categories,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -42,11 +45,12 @@ const getCategory = async (req, res, next) => {
     try {
         const category = await categoryService.getCategory(req.params.id, req.user.userId, txId);
 
-        res.status(200).json({
-            success: true,
-            message: 'Category fetched successfully',
-            data: category,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            category,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -63,11 +67,12 @@ const updateCategory = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Category updated successfully',
-            data: category,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            category,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -79,11 +84,12 @@ const deleteCategory = async (req, res, next) => {
     try {
         const category = await categoryService.deleteCategory(req.params.id, req.user.userId, txId);
 
-        res.status(200).json({
-            success: true,
-            message: 'Category deleted successfully',
-            data: category,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            category,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }

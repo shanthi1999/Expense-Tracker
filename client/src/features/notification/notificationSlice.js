@@ -8,11 +8,11 @@ export const fetchNotifications = createAsyncThunk(
         try {
             const { data } = await notificationApi.getNotifications(params);
             return {
-                data: data.data,
-                total: data.total,
-                unreadCount: data.unreadCount,
-                page: data.page,
-                limit: data.limit,
+                data: data.data.data,
+                total: data.data.total,
+                unreadCount: data.data.unreadCount,
+                page: data.data.page,
+                limit: data.data.limit,
             };
         } catch (error) {
             return rejectWithValue(getApiErrorMessage(error));

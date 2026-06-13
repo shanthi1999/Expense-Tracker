@@ -1,4 +1,5 @@
-import notificationService from '../service/notification/notification.service.js';
+import notificationService from '../services/notification/notification.service.js';
+import apiResponseHelper from '../utils/apiResponseHelper.js';
 
 const getNotifications = async (req, res, next) => {
     const txId = req.id;
@@ -8,11 +9,12 @@ const getNotifications = async (req, res, next) => {
             req.user.userId,
             txId
         );
-        return res.status(200).json({
-            success: true,
-            message: 'Notifications fetched successfully',
-            ...result,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            result,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -23,11 +25,12 @@ const markAsRead = async (req, res, next) => {
     const { id } = req.params;
     try {
         const notification = await notificationService.markAsRead(id, req.user.userId, txId);
-        return res.status(200).json({
-            success: true,
-            message: 'Notification marked as read',
-            data: notification,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            notification,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -37,11 +40,12 @@ const markAllAsRead = async (req, res, next) => {
     const txId = req.id;
     try {
         const result = await notificationService.markAllAsRead(req.user.userId, txId);
-        return res.status(200).json({
-            success: true,
-            message: 'All notifications marked as read',
-            data: result,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            result,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }

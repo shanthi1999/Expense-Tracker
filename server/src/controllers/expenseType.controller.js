@@ -1,4 +1,5 @@
-import expenseTypeService from '../service/expense/expenseType.service.js';
+import expenseTypeService from '../services/expense/expenseType.service.js';
+import apiResponseHelper from '../utils/apiResponseHelper.js';
 
 const addExpenseType = async (req, res, next) => {
     const txId = req.id;
@@ -10,11 +11,12 @@ const addExpenseType = async (req, res, next) => {
             txId
         );
 
-        res.status(201).json({
-            success: true,
-            message: 'Expense type created successfully',
-            data: expenseType,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenseType,
+            apiResponseHelper.responseFlags.created
+        );
     } catch (error) {
         next(error);
     }
@@ -30,11 +32,12 @@ const getExpenseTypes = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Expense types fetched successfully',
-            data: expenseTypes,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenseTypes,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -50,11 +53,12 @@ const getExpenseType = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Expense type fetched successfully',
-            data: expenseType,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenseType,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -71,11 +75,12 @@ const updateExpenseType = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Expense type updated successfully',
-            data: expenseType,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenseType,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -91,11 +96,12 @@ const deleteExpenseType = async (req, res, next) => {
             txId
         );
 
-        res.status(200).json({
-            success: true,
-            message: 'Expense type deleted successfully',
-            data: expenseType,
-        });
+        apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenseType,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }

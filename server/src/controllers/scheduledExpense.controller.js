@@ -1,5 +1,5 @@
-import scheduledExpenseService from '../service/expense/scheduledExpense.service.js';
-import logger from '../vendors/logger/logger.js';
+import scheduledExpenseService from '../services/expense/scheduledExpense.service.js';
+import apiResponseHelper from '../utils/apiResponseHelper.js';
 
 const addScheduledExpense = async (req, res, next) => {
     const txId = req.id;
@@ -9,11 +9,12 @@ const addScheduledExpense = async (req, res, next) => {
             req.user.userId,
             txId
         );
-        return res.status(201).json({
-            success: true,
-            message: 'Scheduled expense created successfully',
-            data: record,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            record,
+            apiResponseHelper.responseFlags.created
+        );
     } catch (error) {
         next(error);
     }
@@ -27,11 +28,12 @@ const getScheduledExpenses = async (req, res, next) => {
             req.user.userId,
             txId
         );
-        return res.status(200).json({
-            success: true,
-            message: 'Scheduled expenses fetched successfully',
-            ...result,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            result,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -47,11 +49,12 @@ const updateScheduledExpense = async (req, res, next) => {
             req.user.userId,
             txId
         );
-        return res.status(200).json({
-            success: true,
-            message: 'Scheduled expense updated successfully',
-            data: record,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            record,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -66,11 +69,12 @@ const deleteScheduledExpense = async (req, res, next) => {
             req.user.userId,
             txId
         );
-        return res.status(200).json({
-            success: true,
-            message: 'Scheduled expense deleted successfully',
-            data: record,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            record,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -80,10 +84,12 @@ const processSchedules = async (req, res, next) => {
     const txId = req.id;
     try {
         await scheduledExpenseService.runScheduledProcessing(txId);
-        return res.status(200).json({
-            success: true,
-            message: 'Scheduled expense processing completed',
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            { message: 'Scheduled expense processing completed' },
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }

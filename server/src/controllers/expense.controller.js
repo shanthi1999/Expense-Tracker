@@ -1,6 +1,7 @@
-import expenseService from '../service/expense/expense.service.js';
+import expenseService from '../services/expense/expense.service.js';
 import logger from '../vendors/logger/logger.js';
 import AppError from '../utils/AppError.js';
+import apiResponseHelper from '../utils/apiResponseHelper.js';
 
 const addExpense = async (req, res, next) => {
     const txId = req.id;
@@ -10,11 +11,12 @@ const addExpense = async (req, res, next) => {
         logger.info(`[${txId}] [ExpenseController] [addExpense] Expense created successfully`, {
             expenseId: expense.expenseId,
         });
-        return res.status(201).json({
-            success: true,
-            message: 'Expense created successfully',
-            data: expense,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expense,
+            apiResponseHelper.responseFlags.created
+        );
     } catch (error) {
         next(error);
     }
@@ -34,11 +36,12 @@ const getExpense = async (req, res, next) => {
         logger.info(`[${txId}] [ExpenseController] [getExpense] Expenses fetched successfully`, {
             total: expenses.total,
         });
-        return res.status(200).json({
-            success: true,
-            message: 'Expenses fetched successfully',
-            ...expenses,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expenses,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -56,11 +59,12 @@ const updateExpense = async (req, res, next) => {
         logger.info(`[${txId}] [ExpenseController] [updateExpense] Expense updated successfully`, {
             expenseId: id,
         });
-        return res.status(200).json({
-            success: true,
-            message: 'Expense updated successfully',
-            data: expense,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expense,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -77,11 +81,12 @@ const deleteExpense = async (req, res, next) => {
         logger.info(`[${txId}] [ExpenseController] [deleteExpense] Expense deleted successfully`, {
             expenseId: id,
         });
-        return res.status(200).json({
-            success: true,
-            message: 'Expense deleted successfully',
-            data: expense,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            expense,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -99,12 +104,12 @@ const getAiSummary = async (req, res, next) => {
             txId
         );
         logger.info(`[${txId}] [ExpenseController] [getAiSummary] Summary generated successfully`);
-        return res.status(200).json({
-            success: true,
-            message: 'AI summary generated successfully',
-            summary: summary.summary,
-            data: summary,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            summary,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -143,11 +148,12 @@ const scanReceipt = async (req, res, next) => {
 
         const result = await expenseService.scanReceipt(req.file.buffer, req.user.userId, txId);
 
-        return res.status(200).json({
-            success: true,
-            message: 'Receipt scanned successfully',
-            data: result,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            result,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }
@@ -164,11 +170,12 @@ const parseVoiceExpense = async (req, res, next) => {
             txId
         );
 
-        return res.status(200).json({
-            success: true,
-            message: 'Voice expense parsed successfully',
-            data: result,
-        });
+        return apiResponseHelper.customResponseFormat(
+            txId,
+            res,
+            result,
+            apiResponseHelper.responseFlags.actionComplete
+        );
     } catch (error) {
         next(error);
     }

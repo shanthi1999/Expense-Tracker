@@ -8,7 +8,6 @@ export const fetchAiSummary = createAsyncThunk(
         try {
             const { data } = await aiApi.getExpenseSummary(params);
             return {
-                summary: data.summary,
                 ...data.data,
             };
         } catch (error) {

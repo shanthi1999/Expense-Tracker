@@ -8,10 +8,10 @@ export const fetchSavingsGoals = createAsyncThunk(
         try {
             const { data } = await savingsGoalApi.getSavingsGoals(params);
             return {
-                data: data.data,
-                total: data.total,
-                page: data.page,
-                limit: data.limit,
+                data: data.data.data,
+                total: data.data.total,
+                page: data.data.page,
+                limit: data.data.limit,
             };
         } catch (error) {
             return rejectWithValue(getApiErrorMessage(error));

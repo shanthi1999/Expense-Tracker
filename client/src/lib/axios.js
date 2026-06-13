@@ -84,8 +84,11 @@ apiClient.interceptors.response.use(
 /** Normalize API errors into a consistent shape for UI handling. */
 export const getApiErrorMessage = (error, fallback = 'Something went wrong') => {
     const data = error?.response?.data;
+    // Unified API format nests details under `data`; fall back to flat shape for safety.
+    const payload = data?.data ?? data;
 
-    if (data?.errors?.length) return data.errors.join(', ');
+    if (payload?.errors?.length) return payload.errors.join(', ');
+    if (payload?.message) return payload.message;
     if (data?.message) return data.message;
     if (error?.message) return error.message;
 

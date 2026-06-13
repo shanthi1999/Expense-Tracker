@@ -38,7 +38,11 @@ const validate =
 
                 return res.status(400).json({
                     success: false,
-                    message: `The request contains the unsupported field(s): ${unsupportedFields.join(', ')}, please remove those fields and retry`,
+                    statusCode: 400,
+                    data: {
+                        message: `The request contains the unsupported field(s): ${unsupportedFields.join(', ')}, please remove those fields and retry`,
+                    },
+                    txId,
                 });
             }
 
@@ -46,8 +50,9 @@ const validate =
             logger.warn(`[${txId}] [Validate] Validation failed on ${source}`, { errors });
             return res.status(400).json({
                 success: false,
-                message: 'Validation error',
-                errors,
+                statusCode: 400,
+                data: { message: 'Validation error', errors },
+                txId,
             });
         }
 

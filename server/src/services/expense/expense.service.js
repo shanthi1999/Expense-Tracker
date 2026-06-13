@@ -3,15 +3,15 @@ import categoryDbModelApi from '../../service_model/expense/category.service.mod
 import expenseTypeDbModelApi from '../../service_model/expense/expenseType.service.model.js';
 import categoryService from './category.service.js';
 import expenseTypeService from './expenseType.service.js';
-import aiService from '../../services/ai.service.js';
+import aiService from '../ai.service.js';
 import userService from '../user/user.service.js';
 import expenseReportExport from '../../utils/expenseReportExport.js';
 import logger from '../../vendors/logger/logger.js';
 import commonEnums from '../../enums/common.enums.js';
 import AppError from '../../utils/AppError.js';
 import ocrProvider from '../../vendors/ocr/ocr.provider.js';
-import receiptOcrService from '../../services/receiptOcr.service.js';
-import voiceExpenseService from '../../services/voiceExpense.service.js';
+import receiptOcrService from '../receiptOcr.service.js';
+import voiceExpenseService from '../voiceExpense.service.js';
 import { uploadReceiptImage } from '../../clients/cloudinary/cloudinary.client.js';
 import { isCloudinaryConfigured } from '../../vendors/cloudinary/cloudinary.js';
 import envConfig from '../../config/env_config.js';

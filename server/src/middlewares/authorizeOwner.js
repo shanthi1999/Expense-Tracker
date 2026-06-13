@@ -9,7 +9,9 @@ const authorizeOwner = (req, res, next) => {
         });
         return res.status(403).json({
             success: false,
-            message: 'You are not authorized to access this resource',
+            statusCode: 403,
+            data: { message: 'You are not authorized to access this resource' },
+            txId,
         });
     }
     next();

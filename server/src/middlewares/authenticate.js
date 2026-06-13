@@ -9,7 +9,9 @@ const authenticate = (req, res, next) => {
             logger.warn(`[${txId}] [Authenticate] Missing or malformed Authorization header`);
             return res.status(401).json({
                 success: false,
-                message: 'Access token required',
+                statusCode: 401,
+                data: { message: 'Access token required' },
+                txId,
             });
         }
 
@@ -25,7 +27,9 @@ const authenticate = (req, res, next) => {
         });
         return res.status(401).json({
             success: false,
-            message: 'Invalid or expired access token',
+            statusCode: 401,
+            data: { message: 'Invalid or expired access token' },
+            txId,
         });
     }
 };

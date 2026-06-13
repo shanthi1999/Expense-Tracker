@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { v4 as uuidv4 } from 'uuid';
-import scheduledExpenseService from '../service/expense/scheduledExpense.service.js';
+import scheduledExpenseService from '../services/expense/scheduledExpense.service.js';
 import logger from '../vendors/logger/logger.js';
 
 export const runSchedulerTasks = async () => {

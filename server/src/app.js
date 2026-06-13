@@ -10,7 +10,7 @@ import errorHandler from './middlewares/errorHandler.js';
 import routes from './routes/index.js';
 import startSchedulerJobs from './jobs/scheduledExpense.job.js';
 import logger from './vendors/logger/logger.js';
-// import rateLimiter from './middlewares/rateLimitMiddleware.js'
+import rateLimiter from './middlewares/rateLimitMiddleware.js'
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(addTransactionId);
 app.use(sanitizeResponse);
-// app.use(rateLimiter)
+app.use(rateLimiter)
 
 app.use('/api/v1', routes);
 app.use(notFound);

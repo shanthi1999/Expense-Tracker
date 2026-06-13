@@ -48,7 +48,7 @@ export function ExportReportsMenu({ filters, sort, disabled = false }) {
                 try {
                     const text = await error.response.data.text();
                     const parsed = JSON.parse(text);
-                    toast.error(parsed.message || 'Export failed');
+                    toast.error(parsed.data?.message || parsed.message || 'Export failed');
                 } catch {
                     toast.error(getApiErrorMessage(error, 'Export failed'));
                 }

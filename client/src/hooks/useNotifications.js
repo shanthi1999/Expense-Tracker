@@ -6,7 +6,7 @@ import {
     setPushPermission,
 } from '@/features/notification/notificationSlice';
 
-const POLL_INTERVAL_MS = 15_000;
+const POLL_INTERVAL_MS = 30_000;
 
 const showBrowserNotification = (title, body) => {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {

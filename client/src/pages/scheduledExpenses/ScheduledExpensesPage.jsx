@@ -15,6 +15,7 @@ import {
 } from '@/features/scheduledExpense/scheduledExpenseSlice';
 import { fetchNotifications } from '@/features/notification/notificationSlice';
 import scheduledExpenseApi from '@/features/scheduledExpense/scheduledExpenseApi';
+import { getApiErrorMessage } from '@/lib/axios';
 import { fetchCategories } from '@/features/category/categorySlice';
 import { fetchExpenseTypes } from '@/features/expenseType/expenseTypeSlice';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -184,7 +185,7 @@ export default function ScheduledExpensesPage() {
             loadSchedules();
             dispatch(fetchNotifications({ page: 1, limit: 20 }));
         } catch (error) {
-            toast.error(error?.response?.data?.message || 'Processing failed');
+            toast.error(getApiErrorMessage(error, 'Processing failed'));
         } finally {
             setProcessLoading(false);
         }
